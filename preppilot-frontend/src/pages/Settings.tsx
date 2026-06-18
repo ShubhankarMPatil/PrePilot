@@ -1,5 +1,9 @@
 import AppLayout from "../components/layout/AppLayout";
 
+import SettingCard from "../components/settings/SettingCard";
+
+import { settingsData } from "../data/mockData";
+
 export default function Settings() {
   return (
     <AppLayout>
@@ -7,8 +11,30 @@ export default function Settings() {
         Settings
       </h1>
 
-      <div className="bg-white rounded-xl border p-6">
-        User Settings Coming Soon
+      <div className="grid grid-cols-2 gap-4">
+        <SettingCard
+          label="Name"
+          value={settingsData.profile.name}
+        />
+
+        <SettingCard
+          label="Target Exam"
+          value={settingsData.profile.targetExam}
+        />
+
+        <SettingCard
+          label="Daily Goal"
+          value={`${settingsData.preferences.dailyGoal} hrs`}
+        />
+
+        <SettingCard
+          label="Notifications"
+          value={
+            settingsData.preferences.notifications
+              ? "Enabled"
+              : "Disabled"
+          }
+        />
       </div>
     </AppLayout>
   );
