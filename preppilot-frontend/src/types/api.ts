@@ -37,3 +37,39 @@ export type AnalyticsResponse = {
   sessionsCompleted: number;
   topicBreakdown: TopicBreakdown[];
 };
+
+export type Test = {
+  id: number;
+  title: string;
+};
+
+export type Question = {
+  id: number;
+  question_text: string;
+
+  question_type: "mcq" | "typed";
+
+  option_a?: string;
+  option_b?: string;
+  option_c?: string;
+  option_d?: string;
+  question_order: number;
+};
+
+export type TestAnswer = {
+  questionId: number;
+  answer: string;
+  timeTaken: number;
+};
+
+export type SubmitTestRequest = {
+  totalTimeSeconds: number;
+  answers: TestAnswer[];
+};
+
+export type TestResult = {
+  score: number;
+  totalQuestions: number;
+  accuracy: number;
+  averageTime: number;
+};

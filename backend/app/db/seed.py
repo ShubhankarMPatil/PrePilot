@@ -6,6 +6,9 @@ from app.models.study_session import StudySession
 
 from app.models.subject import Subject
 
+from app.models.test import Test
+from app.models.question import Question
+
 
 def seed_database():
 
@@ -33,6 +36,20 @@ def seed_database():
     )
 
     db.add(goal)
+
+    test = Test(
+        user_id=user.id,
+        title="Percentages Practice Test",
+        topic="Percentages",
+        difficulty="Medium",
+        total_questions=3,
+        status="ready",
+        total_time_seconds=0
+    )
+
+    db.add(test)
+    db.commit()
+    db.refresh(test)
 
     sessions = [
         StudySession(
@@ -82,8 +99,42 @@ def seed_database():
         ),
     ]
 
+    questions = [
+        Question(
+            test_id=test.id,
+            question_text="A shirt priced at ₹200 is sold at a 20% profit. Find the cost price.",
+            question_type="typed",
+            correct_answer="166.67",
+            explanation="CP = SP / 1.2",
+            question_order=1
+        ),
+
+        Question(
+            test_id=test.id,
+            question_text="What is 25% of 400?",
+            question_type="mcq",
+            option_a="50",
+            option_b="75",
+            option_c="100",
+            option_d="125",
+            correct_answer="100",
+            explanation="25% × 400 = 100",
+            question_order=2
+        ),
+
+        Question(
+            test_id=test.id,
+            question_text="Population increased from 1000 to 1200. Percentage increase?",
+            question_type="typed",
+            correct_answer="20",
+            explanation="Increase = 200/1000 × 100",
+            question_order=3
+        )
+    ]
+
     db.add_all(sessions)
     db.add_all(subjects)
+    db.add_all(questions)
 
     db.commit()
 

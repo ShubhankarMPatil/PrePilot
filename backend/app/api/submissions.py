@@ -1,0 +1,52 @@
+from fastapi import APIRouter
+from fastapi import Depends
+from fastapi import HTTPException
+
+from sqlalchemy.orm import Session
+
+from app.db.dependencies import get_db
+
+from app.schemas.submit_test import (
+    SubmitTestRequest
+)
+
+from app.schemas.test_result import (
+    TestResultResponse
+)
+
+from app.services.submission_service import (
+    SubmissionService
+)
+
+router = APIRouter(
+    tags=["Submissions"]
+)
+
+@router.post(
+    "/tests/{test_id}/submit",
+    response_model=
+        TestResultResponse
+)
+def submit_test(
+    test_id: int,
+    payload: SubmitTestRequest,
+    db: Session = Depends(get_db)
+):
+
+    try:
+
+        return (
+            SubmissionService
+            .submit_test(
+                db,
+                test_id,
+                payload
+            )
+        )
+
+    except ValueError as e:
+
+        raise HTTPException(
+            status_code=404,
+            detail=str(e)
+        )

@@ -16,6 +16,11 @@ class QuestionAttempt(Base):
         index=True
     )
 
+    test_id = Column(
+        Integer,
+        ForeignKey("tests.id")
+    )
+
     question_id = Column(
         Integer,
         ForeignKey("questions.id")
@@ -24,6 +29,8 @@ class QuestionAttempt(Base):
     user_id = Column(Integer)
 
     user_answer = Column(String)
+
+    correct_answer = Column(String)
 
     is_correct = Column(Boolean)
 

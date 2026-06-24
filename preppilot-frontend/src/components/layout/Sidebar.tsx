@@ -4,6 +4,7 @@ import {
   Calendar,
   BarChart3,
   Settings,
+  BookOpen,
 } from "lucide-react";
 
 const menuItems = [
@@ -26,6 +27,11 @@ const menuItems = [
     name: "Settings",
     path: "/settings",
     icon: Settings,
+  },
+  {
+    name: "Exam Center",
+    path: "/exam-center",
+    icon: BookOpen,
   },
 ];
 

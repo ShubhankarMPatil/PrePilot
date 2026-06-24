@@ -1,6 +1,7 @@
 from sqlalchemy import Column
 from sqlalchemy import Integer
 from sqlalchemy import String
+from sqlalchemy import Boolean
 
 from app.db.base import Base
 
@@ -27,3 +28,5 @@ class Test(Base):
     status = Column(String)
 
     total_time_seconds = Column(Integer)
+
+    submitted = Column(Boolean, default=False)
