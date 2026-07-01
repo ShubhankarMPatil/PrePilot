@@ -106,7 +106,8 @@ def seed_database():
             question_type="typed",
             correct_answer="166.67",
             explanation="CP = SP / 1.2",
-            question_order=1
+            question_order=1,
+            topic="Percentages"
         ),
 
         Question(
@@ -119,7 +120,8 @@ def seed_database():
             option_d="125",
             correct_answer="100",
             explanation="25% × 400 = 100",
-            question_order=2
+            question_order=2,
+            topic="Percentages"
         ),
 
         Question(
@@ -128,7 +130,8 @@ def seed_database():
             question_type="typed",
             correct_answer="20",
             explanation="Increase = 200/1000 × 100",
-            question_order=3
+            question_order=3,
+            topic="Percentages"
         )
     ]
 

@@ -73,3 +73,30 @@ export type TestResult = {
   accuracy: number;
   averageTime: number;
 };
+
+export type ReviewQuestion = {
+  questionId: number;
+
+  question: string;
+
+  userAnswer: string;
+
+  correctAnswer: string;
+
+  isCorrect: boolean;
+
+  timeTaken: number;
+
+  explanation: string;
+};
+
+export type Document = {
+  id: number;
+  name: string;
+  status: "Indexed" | "Processing" | "Failed";
+};
+
+export type KnowledgeBaseResponse = {
+  documents: Document[];
+  totalDocuments: number;
+};

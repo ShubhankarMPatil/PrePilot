@@ -33,7 +33,7 @@ export default function ExamCenter() {
       null
     );
 
-  const [testStartTime] =
+  const [testStartTime, setTestStartTime] =
     useState(Date.now());
 
   const totalTimeSeconds =
@@ -43,15 +43,21 @@ export default function ExamCenter() {
         1000
     );
 
-  const [questionStartTimes] =
+  const [questionStartTimes,
+    setQuestionStartTimes] =
     useState<Record<number, number>>(
       {}
     );
 
   useEffect(() => {
     getTests()
-      .then(setTests)
-      .catch(console.error);
+      .then((data) => {
+        console.log("Loaded tests", data);
+        setTests(data);
+      })
+      .catch((error) => {
+        console.error("Failed to load tests", error);
+      });
   }, []);
 
   async function loadTest(
@@ -63,12 +69,19 @@ export default function ExamCenter() {
           testId
         );
 
+      console.log("Loaded test questions", {
+        testId,
+        questions: data,
+      });
+
       setSelectedTest(testId);
       setQuestions(data);
       setAnswers({});
       setResult(null);
+      setTestStartTime(Date.now());
+      setQuestionStartTimes({});
     } catch (error) {
-      console.error(error);
+      console.error("Failed to load test questions", error);
     }
   }
 
@@ -76,15 +89,19 @@ export default function ExamCenter() {
     questionId: number,
     answer: string
   ) {
-    if (
-      !questionStartTimes[
-        questionId
-      ]
-    ) {
-      questionStartTimes[
-        questionId
-      ] = Date.now();
-    }
+    setQuestionStartTimes((prev) =>
+      prev[questionId]
+        ? prev
+        : {
+            ...prev,
+            [questionId]: Date.now(),
+          }
+    );
+
+    console.log("Recorded answer", {
+      questionId,
+      answer,
+    });
 
     setAnswers((prev) => ({
       ...prev,
@@ -93,7 +110,10 @@ export default function ExamCenter() {
   }
 
   async function handleSubmit() {
-    if (!selectedTest) return;
+    if (!selectedTest) {
+      console.warn("handleSubmit aborted: no selectedTest");
+      return;
+    }
 
     const payload = {
       totalTimeSeconds:
@@ -129,6 +149,11 @@ export default function ExamCenter() {
       ),
     };
 
+    console.log("Submitting test", {
+      selectedTest,
+      payload,
+    });
+
     try {
       const result =
         await submitTest(
@@ -136,11 +161,11 @@ export default function ExamCenter() {
           payload
         );
 
-      console.log(result);
+      console.log("submitTest response", result);
 
       setResult(result);
     } catch (error) {
-      console.error(error);
+      console.error("submitTest failed", error);
     }
   }
 
@@ -160,13 +185,14 @@ export default function ExamCenter() {
             <div className="space-y-3">
               {tests.map((test) => (
                 <button
+                  type="button"
                   key={test.id}
                   onClick={() =>
                     loadTest(
                       test.id
                     )
                   }
-                  className="w-full text-left border rounded-lg p-3 hover:bg-gray-100"
+                  className="w-full text-left border rounded-lg p-3 hover:bg-gray-100 cursor-pointer transition"
                 >
                   {test.title}
                 </button>

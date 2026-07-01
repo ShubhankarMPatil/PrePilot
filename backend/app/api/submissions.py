@@ -33,9 +33,13 @@ def submit_test(
     db: Session = Depends(get_db)
 ):
 
-    try:
+    print("Received submit_test request", {
+        "test_id": test_id,
+        "payload": payload.dict(),
+    })
 
-        return (
+    try:
+        result = (
             SubmissionService
             .submit_test(
                 db,
@@ -43,9 +47,12 @@ def submit_test(
                 payload
             )
         )
+        print("submit_test result", result)
+        return result
 
     except ValueError as e:
 
+        print("submit_test error", str(e))
         raise HTTPException(
             status_code=404,
             detail=str(e)

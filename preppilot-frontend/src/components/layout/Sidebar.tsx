@@ -5,6 +5,7 @@ import {
   BarChart3,
   Settings,
   BookOpen,
+  Library,
 } from "lucide-react";
 
 const menuItems = [
@@ -22,6 +23,11 @@ const menuItems = [
     name: "Analytics",
     path: "/analytics",
     icon: BarChart3,
+  },
+  {
+    name: "Knowledge Base",
+    path: "/knowledge-base",
+    icon: Library,
   },
   {
     name: "Settings",

@@ -34,3 +34,5 @@ class Question(Base):
     explanation = Column(String)
 
     question_order = Column(Integer)
+
+    topic = Column(String)

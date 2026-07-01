@@ -2,7 +2,6 @@ import { useEffect, useState } from "react";
 
 import AppLayout from "../components/layout/AppLayout";
 import ProgressCard from "../components/dashboard/ProgressCard";
-import GoalCard from "../components/dashboard/GoalCard";
 import Card from "../components/ui/Card";
 
 import { getDashboard } from "../api/dashboard";

@@ -1,4 +1,4 @@
-import { apiFetch } from "./client";
+import { API_BASE_URL } from "./client";
 
 import type {
   SubmitTestRequest,
@@ -9,8 +9,13 @@ export async function submitTest(
   testId: number,
   payload: SubmitTestRequest
 ) {
+  console.log("submitTest called", {
+    testId,
+    payload,
+  });
+
   const response = await fetch(
-    `http://localhost:3000/tests/${testId}/submit`,
+    `${API_BASE_URL}/tests/${testId}/submit`,
     {
       method: "POST",
       headers: {

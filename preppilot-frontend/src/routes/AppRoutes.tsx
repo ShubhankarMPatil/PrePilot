@@ -6,6 +6,7 @@ import Analytics from "../pages/Analytics";
 import Settings from "../pages/Settings";
 import ExamCenter from "../pages/ExamCenter";
 import Results from "../pages/Results";
+import KnowledgeBase from "../pages/KnowledgeBase";
 
 export default function AppRoutes() {
   return (
@@ -16,6 +17,7 @@ export default function AppRoutes() {
       <Route path="/settings" element={<Settings />} />
       <Route path="/exam-center" element={<ExamCenter />}/>
       <Route path="/results" element={<Results />}/>
+      <Route path="/knowledge-base" element={<KnowledgeBase />}/>
     </Routes>
   );
 }

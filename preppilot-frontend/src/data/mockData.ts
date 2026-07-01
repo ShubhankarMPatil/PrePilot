@@ -75,3 +75,23 @@ export const settingsData = {
     notifications: true,
   },
 };
+
+export const knowledgeBaseData = {
+  documents: [
+    {
+      id: 1,
+      name: "CAT_Arithmetic.pdf",
+      status: "Indexed" as const,
+    },
+    {
+      id: 2,
+      name: "Geometry_Notes.pdf",
+      status: "Processing" as const,
+    },
+    {
+      id: 3,
+      name: "LRDI_Set_Collection.pdf",
+      status: "Failed" as const,
+    },
+  ],
+};

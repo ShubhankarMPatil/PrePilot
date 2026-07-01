@@ -12,25 +12,13 @@ from app.api.analytics import router as analytics_router
 from app.api.tests import router as tests_router
 from app.api.questions import router as questions_router
 from app.api.submissions import router as submission_router
+from app.api.results import router as results_router
+from app.api.review import router as review_router
 
 
 app = FastAPI(
     title="PrepPilot API"
 )
-
-app.include_router(session_router)
-app.include_router(dashboard_router)
-app.include_router(goals_router)
-app.include_router(subjects_router)
-app.include_router(analytics_router)
-app.include_router(tests_router)
-app.include_router(questions_router)
-app.include_router(submission_router)
-
-@app.on_event("startup")
-def startup_event():
-    create_tables()
-    seed_database()
 
 app.add_middleware(
     CORSMiddleware,
@@ -41,6 +29,22 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+app.include_router(session_router)
+app.include_router(dashboard_router)
+app.include_router(goals_router)
+app.include_router(subjects_router)
+app.include_router(analytics_router)
+app.include_router(tests_router)
+app.include_router(questions_router)
+app.include_router(submission_router)
+app.include_router(results_router)
+app.include_router(review_router)
+
+@app.on_event("startup")
+def startup_event():
+    create_tables()
+    seed_database()
 
 
 @app.get("/")
