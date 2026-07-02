@@ -17,7 +17,8 @@ export default function AppRoutes() {
       <Route path="/calendar" element={<Calendar />} />
       <Route path="/analytics" element={<Analytics />} />
       <Route path="/settings" element={<Settings />} />
-      <Route path="/exam-center" element={<ExamCenter />}/>
+      <Route path="/exam-center/" element={<ExamCenter />}/>
+      <Route path="/exam-center/:testId" element={<ExamCenter />}/>
       <Route path="/knowledge-base" element={<KnowledgeBase />}/>
       <Route path="/practice" element={<Practice />}/>
       <Route path="/results/:testId" element={<Results />}/>

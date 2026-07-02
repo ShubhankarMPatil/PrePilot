@@ -9,6 +9,8 @@ import { submitTest } from "../api/testSubmission";
 
 import { useNavigate } from "react-router-dom";
 
+import { useParams } from "react-router-dom";
+
 import type {
   Test,
   Question,
@@ -32,6 +34,8 @@ export default function ExamCenter() {
 
   const navigate = useNavigate(); 
 
+  const { testId } = useParams();
+
   const [result, setResult] =
     useState<TestResult | null>(
       null
@@ -52,6 +56,12 @@ export default function ExamCenter() {
     useState<Record<number, number>>(
       {}
     );
+
+  useEffect(() => {
+    if (!testId) return;
+
+    loadTest(Number(testId));
+  }, [testId]);
 
   useEffect(() => {
     getTests()

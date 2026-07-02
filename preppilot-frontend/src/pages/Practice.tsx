@@ -22,25 +22,34 @@ export default function Practice() {
     const [errorMessage, setErrorMessage] =
     useState("");
 
+    const [isGenerating, setIsGenerating] =
+    useState(false);
+
     const navigate = useNavigate();
 
     async function handleGenerate() {
+        if (isGenerating) return;
+
+        setIsGenerating(true);
+        setErrorMessage("");
+
         try {
             const response = await generateTest({
-                topic,
-                difficulty,
-                count,
-                mode,
+            topic,
+            difficulty,
+            count,
+            mode,
             });
 
-            navigate(`/exam/${response.testId}`);
-
+            navigate(`/exam-center/${response.testId}`);
         } catch (error) {
             console.error(error);
 
             setErrorMessage(
-                "Couldn't generate a test right now. Please try again."
+            "Couldn't generate a test right now. Please try again."
             );
+        } finally {
+            setIsGenerating(false);
         }
     }
 
@@ -129,10 +138,13 @@ export default function Practice() {
             )}
 
             <button
-                onClick={handleGenerate}
-                className="bg-black text-white px-4 py-2 rounded"
+            onClick={handleGenerate}
+            disabled={isGenerating}
+            className="bg-black text-white px-4 py-2 rounded disabled:opacity-50 disabled:cursor-not-allowed"
             >
-                Generate Practice Test
+            {isGenerating
+                ? "Generating..."
+                : "Generate Practice Test"}
             </button>
 
             </div>
