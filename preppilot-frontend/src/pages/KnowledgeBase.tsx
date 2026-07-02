@@ -3,58 +3,158 @@ import { useEffect, useState } from "react";
 import AppLayout from "../components/layout/AppLayout";
 import Card from "../components/ui/Card";
 
-import type { Document } from "../types/api";
-import { knowledgeBaseData } from "../data/mockData";
+import {
+  getDocuments,
+  uploadDocument,
+  deleteDocument,
+} from "../api/Knowledge";
+
+import type { KnowledgeDocument } from "../types/api";
 
 export default function KnowledgeBase() {
-  const [documents, setDocuments] =
-    useState<Document[]>([]);
-  
+  const [documents, setDocuments] = useState<
+    KnowledgeDocument[]
+  >([]);
+
   const [loading, setLoading] =
-    useState<boolean>(true);
+    useState(true);
+
+  const [uploading, setUploading] =
+    useState(false);
+
+  async function loadDocuments() {
+    setLoading(true);
+
+    try {
+      const data =
+        await getDocuments();
+
+      setDocuments(data);
+    } catch (error) {
+      console.error(error);
+    } finally {
+      setLoading(false);
+    }
+  }
 
   useEffect(() => {
-    // Simulate API call
-    setLoading(true);
-    setTimeout(() => {
-      setDocuments(knowledgeBaseData.documents);
-      setLoading(false);
-    }, 500);
+    loadDocuments();
   }, []);
 
-  const getStatusColor = (status: string) => {
+  async function handleUpload(
+    e: React.ChangeEvent<HTMLInputElement>
+  ) {
+    const file =
+      e.target.files?.[0];
+
+    if (!file) return;
+
+    try {
+      setUploading(true);
+
+      await uploadDocument(file);
+
+      await loadDocuments();
+
+      alert(
+        "Document uploaded successfully."
+      );
+    } catch (error) {
+      console.error(error);
+
+      alert(
+        "Upload failed."
+      );
+    } finally {
+      setUploading(false);
+
+      e.target.value = "";
+    }
+  }
+
+  async function handleDelete(
+    id: number
+  ) {
+    if (
+      !window.confirm(
+        "Delete this document?"
+      )
+    )
+      return;
+
+    try {
+      await deleteDocument(id);
+
+      await loadDocuments();
+    } catch (error) {
+      console.error(error);
+    }
+  }
+
+  function getStatusColor(
+    status: KnowledgeDocument["status"]
+  ) {
     switch (status) {
-      case "Indexed":
+      case "indexed":
         return "text-green-600 bg-green-50";
-      case "Processing":
-        return "text-yellow-600 bg-yellow-50";
-      case "Failed":
+
+      case "processing":
+        return "text-blue-600 bg-blue-50";
+
+      case "failed":
         return "text-red-600 bg-red-50";
+
       default:
         return "text-gray-600 bg-gray-50";
     }
-  };
+  }
 
-  const getStatusIcon = (status: string) => {
+  function getStatusIcon(
+    status: KnowledgeDocument["status"]
+  ) {
     switch (status) {
-      case "Indexed":
+      case "indexed":
         return "✓";
-      case "Processing":
+
+      case "processing":
         return "⏳";
-      case "Failed":
+
+      case "failed":
         return "✗";
+
       default:
         return "○";
     }
-  };
+  }
 
   if (loading) {
     return (
       <AppLayout>
-        <div>Loading Knowledge Base...</div>
+        <div>
+          Loading Knowledge Base...
+        </div>
       </AppLayout>
     );
   }
+
+  const indexed =
+    documents.filter(
+      (d) =>
+        d.status === "indexed"
+    ).length;
+
+  const processing =
+    documents.filter(
+      (d) =>
+        d.status ===
+        "processing"
+    ).length;
+
+  const failed =
+    documents.filter(
+      (d) =>
+        d.status === "failed"
+    ).length;
 
   return (
     <AppLayout>
@@ -68,17 +168,29 @@ export default function KnowledgeBase() {
             Upload Document
           </h2>
 
-          <div className="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center hover:border-blue-500 transition cursor-pointer">
+          <label className="block border-2 border-dashed border-gray-300 rounded-lg p-8 text-center cursor-pointer hover:border-blue-500 transition">
             <p className="text-gray-600 mb-2">
-              Drop your documents here
+              📄 Click to upload
             </p>
+
             <p className="text-sm text-gray-500">
-              or click to browse
+              PDF, DOCX, TXT
             </p>
-            <p className="text-xs text-gray-400 mt-3">
-              Supported: PDF, DOCX, TXT
-            </p>
-          </div>
+
+            {uploading && (
+              <p className="mt-3 text-blue-600">
+                Uploading...
+              </p>
+            )}
+
+            <input
+              type="file"
+              hidden
+              onChange={
+                handleUpload
+              }
+            />
+          </label>
         </Card>
 
         <Card>
@@ -91,8 +203,11 @@ export default function KnowledgeBase() {
               <p className="text-sm text-gray-600">
                 Total Documents
               </p>
+
               <p className="text-2xl font-bold">
-                {documents.length}
+                {
+                  documents.length
+                }
               </p>
             </div>
 
@@ -100,10 +215,9 @@ export default function KnowledgeBase() {
               <p className="text-sm text-gray-600">
                 Indexed
               </p>
+
               <p className="text-lg font-semibold text-green-600">
-                {documents.filter(
-                  (d) => d.status === "Indexed"
-                ).length}
+                {indexed}
               </p>
             </div>
 
@@ -111,10 +225,21 @@ export default function KnowledgeBase() {
               <p className="text-sm text-gray-600">
                 Processing
               </p>
-              <p className="text-lg font-semibold text-yellow-600">
-                {documents.filter(
-                  (d) => d.status === "Processing"
-                ).length}
+
+              <p className="text-lg font-semibold text-blue-600">
+                {
+                  processing
+                }
+              </p>
+            </div>
+
+            <div>
+              <p className="text-sm text-gray-600">
+                Failed
+              </p>
+
+              <p className="text-lg font-semibold text-red-600">
+                {failed}
               </p>
             </div>
           </div>
@@ -123,37 +248,74 @@ export default function KnowledgeBase() {
 
       <Card>
         <h2 className="font-semibold mb-4">
-          Indexed Documents
+          Documents
         </h2>
 
-        {documents.length === 0 ? (
+        {documents.length ===
+        0 ? (
           <p className="text-gray-500">
-            No documents uploaded yet
+            No documents
+            uploaded yet.
           </p>
         ) : (
-          <div className="space-y-2">
-            {documents.map((doc) => (
-              <div
-                key={doc.id}
-                className="flex items-center justify-between p-3 border border-gray-200 rounded-lg hover:bg-gray-50 transition"
-              >
-                <div className="flex items-center gap-3 flex-1">
-                  <span className="text-lg">📄</span>
-                  <span className="font-medium">
-                    {doc.name}
-                  </span>
-                </div>
-
-                <span
-                  className={`px-3 py-1 rounded-full text-sm font-medium flex items-center gap-1 ${getStatusColor(
-                    doc.status
-                  )}`}
+          <div className="space-y-3">
+            {documents.map(
+              (doc) => (
+                <div
+                  key={
+                    doc.id
+                  }
+                  className="flex justify-between items-center border rounded-lg p-4"
                 >
-                  <span>{getStatusIcon(doc.status)}</span>
-                  {doc.status}
-                </span>
-              </div>
-            ))}
+                  <div>
+                    <p className="font-semibold">
+                      {
+                        doc.filename
+                      }
+                    </p>
+
+                    <p className="text-sm text-gray-500">
+                      {
+                        doc.fileType
+                      }
+                    </p>
+
+                    <p className="text-xs text-gray-400">
+                      Uploaded{" "}
+                      {
+                        doc.uploadedAt
+                      }
+                    </p>
+                  </div>
+
+                  <div className="flex items-center gap-3">
+                    <span
+                      className={`px-3 py-1 rounded-full text-sm font-medium ${getStatusColor(
+                        doc.status
+                      )}`}
+                    >
+                      {getStatusIcon(
+                        doc.status
+                      )}{" "}
+                      {
+                        doc.status
+                      }
+                    </span>
+
+                    <button
+                      onClick={() =>
+                        handleDelete(
+                          doc.id
+                        )
+                      }
+                      className="text-red-600 hover:text-red-700"
+                    >
+                      Delete
+                    </button>
+                  </div>
+                </div>
+              )
+            )}
           </div>
         )}
       </Card>

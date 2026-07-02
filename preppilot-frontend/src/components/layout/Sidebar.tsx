@@ -6,6 +6,7 @@ import {
   Settings,
   BookOpen,
   Library,
+  PencilLine,
 } from "lucide-react";
 
 const menuItems = [
@@ -38,6 +39,11 @@ const menuItems = [
     name: "Exam Center",
     path: "/exam-center",
     icon: BookOpen,
+  },
+  {
+    name: "Practice",
+    path: "/practice",
+    icon: PencilLine,
   },
 ];
 

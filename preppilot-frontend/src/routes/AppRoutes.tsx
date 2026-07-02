@@ -7,6 +7,8 @@ import Settings from "../pages/Settings";
 import ExamCenter from "../pages/ExamCenter";
 import Results from "../pages/Results";
 import KnowledgeBase from "../pages/KnowledgeBase";
+import Practice from "../pages/Practice";
+import Review from "../pages/Review";
 
 export default function AppRoutes() {
   return (
@@ -16,8 +18,10 @@ export default function AppRoutes() {
       <Route path="/analytics" element={<Analytics />} />
       <Route path="/settings" element={<Settings />} />
       <Route path="/exam-center" element={<ExamCenter />}/>
-      <Route path="/results" element={<Results />}/>
       <Route path="/knowledge-base" element={<KnowledgeBase />}/>
+      <Route path="/practice" element={<Practice />}/>
+      <Route path="/results/:testId" element={<Results />}/>
+      <Route path="/review/:testId" element={<Review />}/>
     </Routes>
   );
 }

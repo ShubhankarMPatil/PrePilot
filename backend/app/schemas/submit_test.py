@@ -1,7 +1,10 @@
 from pydantic import BaseModel
 
 
-class AnswerSubmission(BaseModel):
+class SubmittedAnswer(
+    BaseModel
+):
+
     questionId: int
 
     answer: str
@@ -9,7 +12,10 @@ class AnswerSubmission(BaseModel):
     timeTaken: int
 
 
-class SubmitTestRequest(BaseModel):
-    totalTimeSeconds: int
+class SubmitTestRequest(
+    BaseModel
+):
 
-    answers: list[AnswerSubmission]
+    answers: list[
+        SubmittedAnswer
+    ]

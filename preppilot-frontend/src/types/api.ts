@@ -63,7 +63,7 @@ export type TestAnswer = {
 };
 
 export type SubmitTestRequest = {
-  totalTimeSeconds: number;
+  // totalTimeSeconds: number;
   answers: TestAnswer[];
 };
 
@@ -99,4 +99,16 @@ export type Document = {
 export type KnowledgeBaseResponse = {
   documents: Document[];
   totalDocuments: number;
+};
+
+export type KnowledgeDocument = {
+  id: number;
+  filename: string;
+  fileType: string;
+  uploadedAt: string;
+  status:
+    | "uploaded"
+    | "processing"
+    | "indexed"
+    | "failed";
 };

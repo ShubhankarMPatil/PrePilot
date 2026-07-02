@@ -36,3 +36,11 @@ class Question(Base):
     question_order = Column(Integer)
 
     topic = Column(String)
+
+    subtopic = Column(String)
+
+    difficulty = Column(String)
+
+    estimated_time_seconds = Column(Integer, default=90)
+
+    tags = Column(String)

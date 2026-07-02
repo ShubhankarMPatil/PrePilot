@@ -7,6 +7,8 @@ import { getTests } from "../api/tests";
 import { getQuestionsForTest } from "../api/questions";
 import { submitTest } from "../api/testSubmission";
 
+import { useNavigate } from "react-router-dom";
+
 import type {
   Test,
   Question,
@@ -27,6 +29,8 @@ export default function ExamCenter() {
     useState<Record<number, string>>(
       {}
     );
+
+  const navigate = useNavigate(); 
 
   const [result, setResult] =
     useState<TestResult | null>(
@@ -116,12 +120,12 @@ export default function ExamCenter() {
     }
 
     const payload = {
-      totalTimeSeconds:
-        Math.floor(
-          (Date.now() -
-            testStartTime) /
-            1000
-        ),
+      // totalTimeSeconds:
+      //   Math.floor(
+      //     (Date.now() -
+      //       testStartTime) /
+      //       1000
+      //   ),
 
       answers: questions.map(
         (question) => ({
@@ -161,9 +165,11 @@ export default function ExamCenter() {
           payload
         );
 
-      console.log("submitTest response", result);
+      navigate(`/results/${selectedTest}`);
 
-      setResult(result);
+      // console.log("submitTest response", result);
+
+      // setResult(result);
     } catch (error) {
       console.error("submitTest failed", error);
     }
@@ -372,7 +378,7 @@ export default function ExamCenter() {
                 </button>
               )}
           </Card>
-
+{/* 
           {result && (
             <Card>
               <h2 className="font-semibold mb-4">
@@ -402,7 +408,7 @@ export default function ExamCenter() {
                 s
               </p>
             </Card>
-          )}
+          )} */}
         </div>
       </div>
     </AppLayout>
