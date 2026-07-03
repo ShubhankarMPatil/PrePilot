@@ -1,23 +1,26 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import { useNavigate, useParams } from "react-router-dom";
 
 import AppLayout from "../components/layout/AppLayout";
 import Card from "../components/ui/Card";
+import QuestionCard from "../components/exam/QuestionCard";
 
 import { getTests } from "../api/tests";
 import { getQuestionsForTest } from "../api/questions";
 import { submitTest } from "../api/testSubmission";
 
-import { useNavigate } from "react-router-dom";
-
-import { useParams } from "react-router-dom";
-
 import type {
-  Test,
   Question,
-  TestResult,
+  Test,
+  ExamAnswer,
 } from "../types/api";
 
+
 export default function ExamCenter() {
+  const navigate = useNavigate();
+
+  const { testId } = useParams();
+
   const [tests, setTests] =
     useState<Test[]>([]);
 
@@ -27,35 +30,49 @@ export default function ExamCenter() {
   const [selectedTest, setSelectedTest] =
     useState<number | null>(null);
 
-  const [answers, setAnswers] =
-    useState<Record<number, string>>(
-      {}
-    );
+  const [currentQuestionIndex,
+    setCurrentQuestionIndex] =
+    useState(0);
 
-  const navigate = useNavigate(); 
+  const [isSubmitting,
+  setIsSubmitting] =
+  useState(false);
 
-  const { testId } = useParams();
+  const [examState,
+    setExamState] =
+    useState<
+      Record<number, ExamAnswer>
+    >({});
 
-  const [result, setResult] =
-    useState<TestResult | null>(
-      null
-    );
-
-  const [testStartTime, setTestStartTime] =
+  const [testStartTime,
+    setTestStartTime] =
     useState(Date.now());
 
-  const totalTimeSeconds =
-    Math.floor(
-      (Date.now() -
-        testStartTime) /
-        1000
-    );
+  const [elapsedTime,
+    setElapsedTime] =
+    useState(0);
 
-  const [questionStartTimes,
-    setQuestionStartTimes] =
-    useState<Record<number, number>>(
-      {}
-    );
+  const questionEnteredAt =
+    useRef(Date.now());
+
+  const currentQuestion =
+    questions[currentQuestionIndex];
+
+  useEffect(() => {
+    const interval =
+      setInterval(() => {
+        setElapsedTime(
+          Math.floor(
+            (Date.now() -
+              testStartTime) /
+              1000
+          )
+        );
+      }, 1000);
+
+    return () =>
+      clearInterval(interval);
+  }, [testStartTime]);
 
   useEffect(() => {
     if (!testId) return;
@@ -65,123 +82,232 @@ export default function ExamCenter() {
 
   useEffect(() => {
     getTests()
-      .then((data) => {
-        console.log("Loaded tests", data);
-        setTests(data);
-      })
-      .catch((error) => {
-        console.error("Failed to load tests", error);
-      });
+      .then(setTests)
+      .catch(console.error);
   }, []);
 
   async function loadTest(
-    testId: number
+    id: number
   ) {
     try {
       const data =
         await getQuestionsForTest(
-          testId
+          id
         );
 
-      console.log("Loaded test questions", {
-        testId,
-        questions: data,
-      });
+      setSelectedTest(id);
 
-      setSelectedTest(testId);
       setQuestions(data);
-      setAnswers({});
-      setResult(null);
+
+      setCurrentQuestionIndex(0);
+
+      setExamState({});
+
       setTestStartTime(Date.now());
-      setQuestionStartTimes({});
+
+      questionEnteredAt.current =
+        Date.now();
     } catch (error) {
-      console.error("Failed to load test questions", error);
+      console.error(error);
     }
   }
 
-  function recordAnswer(
-    questionId: number,
-    answer: string
-  ) {
-    setQuestionStartTimes((prev) =>
-      prev[questionId]
-        ? prev
-        : {
-            ...prev,
-            [questionId]: Date.now(),
-          }
-    );
+  useEffect(() => {
+    if (!currentQuestion) return;
 
-    console.log("Recorded answer", {
-      questionId,
-      answer,
+    questionEnteredAt.current =
+      Date.now();
+
+    setExamState((prev) => {
+      const existing =
+        prev[currentQuestion.id];
+
+      return {
+        ...prev,
+
+        [currentQuestion.id]:
+          existing ?? {
+            questionId:
+              currentQuestion.id,
+
+            answer: "",
+
+            timeTakenSeconds: 0,
+
+            visitCount: 1,
+          },
+      };
+    });
+  }, [currentQuestionIndex, questions]);
+
+  function finishCurrentQuestionTimer() {
+    if (!currentQuestion)
+      return;
+
+    const elapsed =
+      (Date.now() -
+        questionEnteredAt.current) /
+      1000;
+
+    setExamState((prev) => {
+      const existing =
+        prev[currentQuestion.id];
+
+      if (!existing)
+        return prev;
+
+      return {
+        ...prev,
+
+        [currentQuestion.id]: {
+          ...existing,
+
+          timeTakenSeconds:
+            existing.timeTakenSeconds +
+            elapsed,
+        },
+      };
+    });
+  }
+
+  function goToQuestion(
+    index: number
+  ) {
+    if (
+      index < 0 ||
+      index >= questions.length
+    )
+      return;
+
+    finishCurrentQuestionTimer();
+
+    const nextQuestion =
+      questions[index];
+
+    setExamState((prev) => {
+      const existing =
+        prev[nextQuestion.id];
+
+      return {
+        ...prev,
+
+        [nextQuestion.id]:
+          existing
+            ? {
+                ...existing,
+
+                visitCount:
+                  existing.visitCount +
+                  1,
+              }
+            : {
+                questionId:
+                  nextQuestion.id,
+
+                answer: "",
+
+                visitCount: 1,
+
+                timeTakenSeconds: 0,
+              },
+      };
     });
 
-    setAnswers((prev) => ({
+    questionEnteredAt.current =
+      Date.now();
+
+    setCurrentQuestionIndex(index);
+  }
+
+  function recordAnswer(
+    answer: string
+  ) {
+    if (!currentQuestion)
+      return;
+
+    setExamState((prev) => ({
       ...prev,
-      [questionId]: answer,
+
+      [currentQuestion.id]: {
+        ...(prev[
+          currentQuestion.id
+        ] ?? {
+          questionId:
+            currentQuestion.id,
+
+          visitCount: 1,
+
+          timeTakenSeconds: 0,
+        }),
+
+        answer,
+      },
     }));
   }
 
   async function handleSubmit() {
-    if (!selectedTest) {
-      console.warn("handleSubmit aborted: no selectedTest");
+    if (!selectedTest || !currentQuestion)
       return;
-    }
 
-    const payload = {
-      // totalTimeSeconds:
-      //   Math.floor(
-      //     (Date.now() -
-      //       testStartTime) /
-      //       1000
-      //   ),
+    if (isSubmitting)
+      return;
 
-      answers: questions.map(
-        (question) => ({
-          questionId:
-            question.id,
+    setIsSubmitting(true);
 
-          answer:
-            answers[
-              question.id
-            ] ?? "",
+    const elapsed =
+      (Date.now() -
+        questionEnteredAt.current) /
+      1000;
 
-          timeTaken:
-            questionStartTimes[
-              question.id
-            ]
-              ? Math.floor(
-                  (Date.now() -
-                    questionStartTimes[
-                      question.id
-                    ]) /
-                    1000
-                )
-              : 0,
-        })
-      ),
+    const finalExamState = {
+      ...examState,
+
+      [currentQuestion.id]: {
+        ...examState[currentQuestion.id],
+
+        timeTakenSeconds:
+          (examState[currentQuestion.id]
+            ?.timeTakenSeconds ??
+            0) + elapsed,
+      },
     };
 
-    console.log("Submitting test", {
-      selectedTest,
-      payload,
-    });
+    const payload = {
+      answers:
+        Object.values(
+          finalExamState
+        ).map((answer) => ({
+          questionId:
+            answer.questionId,
+
+          answer:
+            answer.answer,
+
+          timeTaken:
+            Math.round(
+              answer.timeTakenSeconds
+            ),
+
+          visitCount:
+            answer.visitCount,
+        })),
+    };
 
     try {
-      const result =
-        await submitTest(
-          selectedTest,
-          payload
-        );
+      await submitTest(
+        selectedTest,
+        payload
+      );
 
-      navigate(`/results/${selectedTest}`);
-
-      // console.log("submitTest response", result);
-
-      // setResult(result);
+      navigate(
+        `/results/${selectedTest}`
+      );
     } catch (error) {
-      console.error("submitTest failed", error);
+      console.error(error);
+    }
+
+    finally {
+      setIsSubmitting(false);
     }
   }
 
@@ -192,7 +318,8 @@ export default function ExamCenter() {
       </h1>
 
       <div className="grid grid-cols-3 gap-6">
-        <div>
+        {/* Left Sidebar */}
+        <div className="space-y-6">
           <Card>
             <h2 className="font-semibold mb-4">
               Available Tests
@@ -201,36 +328,102 @@ export default function ExamCenter() {
             <div className="space-y-3">
               {tests.map((test) => (
                 <button
-                  type="button"
                   key={test.id}
+                  type="button"
                   onClick={() =>
-                    loadTest(
-                      test.id
-                    )
+                    loadTest(test.id)
                   }
-                  className="w-full text-left border rounded-lg p-3 hover:bg-gray-100 cursor-pointer transition"
+                  className={`w-full rounded-lg border p-3 text-left transition ${
+                    selectedTest === test.id
+                      ? "bg-gray-200 border-gray-400"
+                      : "hover:bg-gray-100"
+                  }`}
                 >
                   {test.title}
                 </button>
               ))}
             </div>
           </Card>
+
+          {questions.length > 0 && (
+            <Card>
+              <h2 className="font-semibold mb-4">
+                Question Navigator
+              </h2>
+
+              <div className="grid grid-cols-5 gap-2">
+                {questions.map(
+                  (
+                    question,
+                    index
+                  ) => {
+                    const state =
+                      examState[
+                        question.id
+                      ];
+
+                    const isCurrent =
+                      index ===
+                      currentQuestionIndex;
+
+                    const isAnswered =
+                      !!state?.answer;
+
+                    return (
+                      <button
+                        key={
+                          question.id
+                        }
+                        type="button"
+                        onClick={() =>
+                          goToQuestion(
+                            index
+                          )
+                        }
+                        className={`rounded border p-2 text-sm transition ${
+                          isCurrent
+                            ? "bg-blue-600 text-white border-blue-600"
+                            : isAnswered
+                            ? "bg-green-100 border-green-300"
+                            : "hover:bg-gray-100"
+                        }`}
+                      >
+                        {index + 1}
+                      </button>
+                    );
+                  }
+                )}
+              </div>
+            </Card>
+          )}
         </div>
 
+        {/* Question Area */}
         <div className="col-span-2">
           <Card>
-            <div className="flex justify-between items-center mb-4">
-              <h2 className="font-semibold">
-                Questions
-              </h2>
+            <div className="mb-6 flex items-center justify-between">
+              <div>
+                <h2 className="font-semibold">
+                  Questions
+                </h2>
+
+                {currentQuestion && (
+                  <p className="text-sm text-gray-500 mt-1">
+                    Question{" "}
+                    {currentQuestionIndex +
+                      1}{" "}
+                    of{" "}
+                    {
+                      questions.length
+                    }
+                  </p>
+                )}
+              </div>
 
               {selectedTest && (
                 <span className="text-sm text-gray-600">
                   Time Elapsed:{" "}
-                  {
-                    totalTimeSeconds
-                  }
-                  s
+                  {elapsedTime}s
                 </span>
               )}
             </div>
@@ -242,183 +435,79 @@ export default function ExamCenter() {
               </p>
             )}
 
-            {questions.map(
-              (question) => (
-                <div
-                  key={
-                    question.id
+            {currentQuestion && (
+              <QuestionCard
+                question={
+                  currentQuestion
+                }
+                answer={
+                  examState[
+                    currentQuestion.id
+                  ]?.answer ?? ""
+                }
+                onAnswerChange={
+                  recordAnswer
+                }
+              />
+            )}
+
+            {questions.length >
+              0 && (
+              <div className="mt-6 flex items-center justify-between">
+                <button
+                  type="button"
+                  onClick={() =>
+                    goToQuestion(
+                      currentQuestionIndex -
+                        1
+                    )
                   }
-                  className="border rounded-lg p-4 mb-4"
+                  disabled={
+                    currentQuestionIndex ===
+                    0
+                  }
+                  className="rounded border px-4 py-2 disabled:opacity-50"
                 >
-                  <p className="font-medium mb-4">
-                    {
-                      question.question_text
-                    }
-                  </p>
+                  Previous
+                </button>
 
-                  {question.question_type ===
-                    "mcq" && (
-                    <div className="space-y-2">
-                      <button
-                        onClick={() =>
-                          recordAnswer(
-                            question.id,
-                            question.option_a ??
-                              ""
-                          )
-                        }
-                        className={`block w-full border rounded p-2 text-left ${
-                          answers[
-                            question.id
-                          ] ===
-                          question.option_a
-                            ? "bg-gray-200"
-                            : ""
-                        }`}
-                      >
-                        {
-                          question.option_a
-                        }
-                      </button>
-
-                      <button
-                        onClick={() =>
-                          recordAnswer(
-                            question.id,
-                            question.option_b ??
-                              ""
-                          )
-                        }
-                        className={`block w-full border rounded p-2 text-left ${
-                          answers[
-                            question.id
-                          ] ===
-                          question.option_b
-                            ? "bg-gray-200"
-                            : ""
-                        }`}
-                      >
-                        {
-                          question.option_b
-                        }
-                      </button>
-
-                      <button
-                        onClick={() =>
-                          recordAnswer(
-                            question.id,
-                            question.option_c ??
-                              ""
-                          )
-                        }
-                        className={`block w-full border rounded p-2 text-left ${
-                          answers[
-                            question.id
-                          ] ===
-                          question.option_c
-                            ? "bg-gray-200"
-                            : ""
-                        }`}
-                      >
-                        {
-                          question.option_c
-                        }
-                      </button>
-
-                      <button
-                        onClick={() =>
-                          recordAnswer(
-                            question.id,
-                            question.option_d ??
-                              ""
-                          )
-                        }
-                        className={`block w-full border rounded p-2 text-left ${
-                          answers[
-                            question.id
-                          ] ===
-                          question.option_d
-                            ? "bg-gray-200"
-                            : ""
-                        }`}
-                      >
-                        {
-                          question.option_d
-                        }
-                      </button>
-                    </div>
-                  )}
-
-                  {question.question_type ===
-                    "typed" && (
-                    <input
-                      type="text"
-                      placeholder="Enter answer"
-                      value={
-                        answers[
-                          question.id
-                        ] ?? ""
-                      }
-                      onChange={(
-                        e
-                      ) =>
-                        recordAnswer(
-                          question.id,
-                          e.target
-                            .value
-                        )
-                      }
-                      className="border rounded p-2 w-full"
-                    />
-                  )}
-                </div>
-              )
+                <button
+                  type="button"
+                  onClick={() =>
+                    goToQuestion(
+                      currentQuestionIndex +
+                        1
+                    )
+                  }
+                  disabled={
+                    currentQuestionIndex ===
+                    questions.length -
+                      1
+                  }
+                  className="rounded border px-4 py-2 disabled:opacity-50"
+                >
+                  Next
+                </button>
+              </div>
             )}
 
             {selectedTest &&
               questions.length >
                 0 && (
-                <button
-                  onClick={
-                    handleSubmit
-                  }
-                  className="bg-black text-white px-4 py-2 rounded"
-                >
-                  Submit Test
-                </button>
+                <div className="mt-8 border-t pt-6">
+                  <button
+                    type="button"
+                    disabled={isSubmitting}
+                    onClick={handleSubmit}
+                    className="rounded bg-black px-6 py-2 text-white disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    {isSubmitting
+                      ? "Submitting..."
+                      : "Submit Test"}
+                  </button>
+                </div>
               )}
           </Card>
-{/* 
-          {result && (
-            <Card>
-              <h2 className="font-semibold mb-4">
-                Test Result
-              </h2>
-
-              <p>
-                Score:{" "}
-                {
-                  result.score
-                }
-              </p>
-
-              <p>
-                Accuracy:{" "}
-                {
-                  result.accuracy
-                }
-                %
-              </p>
-
-              <p>
-                Average Time:{" "}
-                {
-                  result.averageTime
-                }
-                s
-              </p>
-            </Card>
-          )} */}
         </div>
       </div>
     </AppLayout>

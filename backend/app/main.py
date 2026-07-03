@@ -14,6 +14,7 @@ from app.api.questions import router as questions_router
 from app.api.submissions import router as submission_router
 from app.api.results import router as results_router
 from app.api.review import router as review_router
+from app.api.coach import router as coach_router
 
 
 app = FastAPI(
@@ -40,6 +41,7 @@ app.include_router(questions_router)
 app.include_router(submission_router)
 app.include_router(results_router)
 app.include_router(review_router)
+app.include_router(coach_router)
 
 @app.on_event("startup")
 def startup_event():

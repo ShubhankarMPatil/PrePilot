@@ -112,3 +112,22 @@ export type KnowledgeDocument = {
     | "indexed"
     | "failed";
 };
+
+export type ExamAnswer = {
+  questionId: number;
+  answer: string;
+  timeTakenSeconds: number;
+  visitCount: number;
+};
+
+export type ExamSession = {
+  currentQuestionIndex: number;
+  answers: Record<number, ExamAnswer>;
+};
+
+export type CoachInsight = {
+  summary: string;
+  strengths: string[];
+  weaknesses: string[];
+  recommendations: string[];
+};

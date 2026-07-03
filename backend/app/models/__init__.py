@@ -9,3 +9,4 @@ from app.models.question import Question
 from app.models.question_attempt import QuestionAttempt
 
 from app.models.ai_generation import AIGeneration
+from app.models.ai_insight import AIInsight
