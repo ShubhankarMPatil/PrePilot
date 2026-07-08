@@ -1,13 +1,13 @@
 import json
 
 from app.ai.coaching.coach import Coach
+from app.ai.coaching.models import CoachingInsight
 
 from app.models.ai_insight import AIInsight
 from app.models.question_attempt import QuestionAttempt
 
 from app.services.result_service import ResultService
-from app.ai.coaching.models import CoachingInsight
-
+from app.models.test import Test
 
 class CoachingService:
 
@@ -16,6 +16,12 @@ class CoachingService:
         db,
         test_id,
     ):
+
+        test = (
+            db.query(Test)
+            .filter(Test.id == test_id)
+            .first()
+        )
 
         existing = (
             db.query(AIInsight)
@@ -28,12 +34,12 @@ class CoachingService:
         # ----------------------------
         if existing:
 
-            return {
-                "summary": existing.summary,
-                "strengths": json.loads(existing.strengths),
-                "weaknesses": json.loads(existing.weaknesses),
-                "recommendations": json.loads(existing.recommendations),
-            }
+            return CoachingInsight(
+                summary=existing.summary,
+                strengths=json.loads(existing.strengths),
+                weaknesses=json.loads(existing.weaknesses),
+                recommendations=json.loads(existing.recommendations),
+            )
 
         # ----------------------------
         # Generate new insight
@@ -52,22 +58,45 @@ class CoachingService:
             .all()
         )
 
+        attempt_payload = []
+
+        for attempt in attempts:
+
+            attempt_payload.append({
+
+                "questionId": attempt.question_id,
+
+                "userAnswer": attempt.user_answer,
+
+                "correctAnswer": attempt.correct_answer,
+
+                "correct": attempt.is_correct,
+
+                "timeTaken": attempt.time_taken_seconds,
+            })
+
+        context = {
+
+            "topic": test.topic,
+
+            "difficulty": test.difficulty,
+
+            "questionCount": test.total_questions,
+
+            "result": result,
+
+            "attempts": attempt_payload,
+        }
+
         coach = Coach()
 
         insight = coach.generate(
-            result=result,
-            attempts=[
-                {
-                    "questionId": a.question_id,
-                    "correct": a.is_correct,
-                    "timeTaken": a.time_taken_seconds,
-                }
-                for a in attempts
-            ],
+            context
         )
 
         record = AIInsight(
 
+            # TODO: Replace with authenticated user
             user_id=1,
 
             test_id=test_id,
@@ -91,9 +120,4 @@ class CoachingService:
 
         db.commit()
 
-        return CoachingInsight(
-            summary=existing.summary,
-            strengths=json.loads(existing.strengths),
-            weaknesses=json.loads(existing.weaknesses),
-            recommendations=json.loads(existing.recommendations),
-        )
+        return insight

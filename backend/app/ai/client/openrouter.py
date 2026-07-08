@@ -2,8 +2,6 @@ import instructor
 
 from openai import OpenAI
 
-from app.ai.models import GeneratedQuestionSet
-from app.ai.prompts.question_generation import SYSTEM_PROMPT
 from app.ai.settings import (
     OPENROUTER_API_KEY,
     OPENROUTER_MODEL,
@@ -21,19 +19,28 @@ class OpenRouterClient:
 
         self.client = instructor.from_openai(client)
 
-    def generate_questions(
+    def generate(
         self,
+        *,
+        system_prompt: str,
         user_prompt: str,
-    ) -> GeneratedQuestionSet:
+        response_model,
+    ):
 
-        response = self.client.chat.completions.create(
+        return self.client.chat.completions.create(
+
             model=OPENROUTER_MODEL,
-            response_model=GeneratedQuestionSet,
-            max_tokens=2000,
+
+            response_model=response_model,
+
+            max_tokens=2500,
+
+            temperature=0.5,
+
             messages=[
                 {
                     "role": "system",
-                    "content": SYSTEM_PROMPT,
+                    "content": system_prompt,
                 },
                 {
                     "role": "user",
@@ -42,4 +49,15 @@ class OpenRouterClient:
             ],
         )
 
-        return response
+    def generate_questions(
+        self,
+        user_prompt,
+        response_model,
+        system_prompt,
+    ):
+
+        return self.generate(
+            system_prompt=system_prompt,
+            user_prompt=user_prompt,
+            response_model=response_model,
+        )

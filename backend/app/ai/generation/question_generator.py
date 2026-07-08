@@ -24,4 +24,11 @@ class QuestionGenerator:
             mode,
         )
 
-        return self.client.generate_questions(prompt)
+        return self.client.generate(
+
+            system_prompt=SYSTEM_PROMPT,
+
+            user_prompt=prompt,
+
+            response_model=GeneratedQuestionSet,
+    )

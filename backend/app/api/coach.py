@@ -9,6 +9,8 @@ from app.services.coaching_service import (
     CoachingService,
 )
 
+from app.ai.coaching.models import CoachingInsight
+
 router = APIRouter(
     prefix="/coach",
     tags=["Coach"],
@@ -17,6 +19,7 @@ router = APIRouter(
 
 @router.get(
     "/test/{test_id}",
+    response_model=CoachingInsight,
 )
 def get_coaching(
     test_id: int,

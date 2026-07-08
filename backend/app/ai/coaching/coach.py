@@ -18,15 +18,11 @@ class Coach:
 
     def generate(
         self,
-        result,
-        attempts,
+        context,
     ) -> CoachingInsight:
 
         return self.client.generate(
             system_prompt=SYSTEM_PROMPT,
-            user_prompt=build_prompt(
-                result,
-                attempts,
-            ),
+            user_prompt=build_prompt(context),
             response_model=CoachingInsight,
         )

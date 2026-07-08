@@ -5,14 +5,11 @@ import AppLayout from "../components/layout/AppLayout";
 import Card from "../components/ui/Card";
 
 import { getResult } from "../api/results";
-
-import type { TestResult } from "../types/api";
-
 import { getCoachInsight } from "../api/coach";
 
-import type {CoachInsight} from "../types/api";
+import type { TestResult, CoachInsight } from "../types/api";
 
-export default async function Results() {
+export default function Results() {
   const { testId } = useParams();
 
   const [result, setResult] =
@@ -28,27 +25,39 @@ export default async function Results() {
     useState(true);
 
   useEffect(() => {
+    if (!testId) return;
+
     async function loadResult() {
-      if (!testId) return;
-
       try {
-        const [resultData, coachData] =
-          await Promise.all([
-            getResult(Number(testId)),
-            getCoachInsight(Number(testId)),
-          ]);
+        const data = await getResult(
+          Number(testId)
+        );
 
-        setResult(resultData);
-        setCoach(coachData);
+        setResult(data);
       } catch (error) {
         console.error(error);
       } finally {
         setLoading(false);
+      }
+    }
+
+    async function loadCoach() {
+      try {
+        const insight =
+          await getCoachInsight(
+            Number(testId)
+          );
+
+        setCoach(insight);
+      } catch (error) {
+        console.error(error);
+      } finally {
         setCoachLoading(false);
       }
     }
 
     loadResult();
+    loadCoach();
   }, [testId]);
 
   if (loading) {
@@ -63,19 +72,6 @@ export default async function Results() {
         </Card>
       </AppLayout>
     );
-  }
-
-  try {
-    const insight =
-      await getCoachInsight(
-        Number(testId)
-      );
-
-    setCoach(insight);
-  } catch (error) {
-    console.error(error);
-  } finally {
-    setCoachLoading(false);
   }
 
   if (!result) {
@@ -111,7 +107,6 @@ export default async function Results() {
 
       {coach && (
         <div className="space-y-6 mt-6">
-
           <Card>
             <h2 className="font-semibold mb-3">
               Summary
@@ -126,13 +121,11 @@ export default async function Results() {
             </h2>
 
             <ul className="list-disc pl-5 space-y-1">
-              {coach.strengths.map(
-                (item) => (
-                  <li key={item}>
-                    {item}
-                  </li>
-                )
-              )}
+              {coach.strengths.map((item) => (
+                <li key={item}>
+                  {item}
+                </li>
+              ))}
             </ul>
           </Card>
 
@@ -142,13 +135,11 @@ export default async function Results() {
             </h2>
 
             <ul className="list-disc pl-5 space-y-1">
-              {coach.weaknesses.map(
-                (item) => (
-                  <li key={item}>
-                    {item}
-                  </li>
-                )
-              )}
+              {coach.weaknesses.map((item) => (
+                <li key={item}>
+                  {item}
+                </li>
+              ))}
             </ul>
           </Card>
 
@@ -158,16 +149,13 @@ export default async function Results() {
             </h2>
 
             <ul className="list-disc pl-5 space-y-1">
-              {coach.recommendations.map(
-                (item) => (
-                  <li key={item}>
-                    {item}
-                  </li>
-                )
-              )}
+              {coach.recommendations.map((item) => (
+                <li key={item}>
+                  {item}
+                </li>
+              ))}
             </ul>
           </Card>
-
         </div>
       )}
 
