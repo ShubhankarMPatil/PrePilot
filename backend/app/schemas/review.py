@@ -1,9 +1,22 @@
 from pydantic import BaseModel
 
+class ChallengeReview(BaseModel):
 
-class ReviewQuestionResponse(
-    BaseModel
-):
+    challenged: bool
+
+    status: str
+
+    derivedAnswer: str
+
+    reasoning: str
+
+    confidence: float
+
+    scoreChange: int
+
+
+class ReviewQuestion(BaseModel):
+
     questionId: int
 
     question: str
@@ -17,3 +30,5 @@ class ReviewQuestionResponse(
     timeTaken: int
 
     explanation: str
+
+    challenge: ChallengeReview | None = None

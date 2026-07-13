@@ -8,11 +8,13 @@ import QuestionCard from "../components/exam/QuestionCard";
 import { getTests } from "../api/tests";
 import { getQuestionsForTest } from "../api/questions";
 import { submitTest } from "../api/testSubmission";
+import { challengeQuestion } from "../api/challenge";
 
 import type {
   Question,
   Test,
   ExamAnswer,
+  ChallengeState,
 } from "../types/api";
 
 
@@ -44,6 +46,20 @@ export default function ExamCenter() {
       Record<number, ExamAnswer>
     >({});
 
+  const currentQuestion =
+    questions[currentQuestionIndex];
+
+  const [challengeState,
+    setChallengeState] =
+    useState<
+      Record<number, ChallengeState>
+    >({});
+
+  const challengeLoading =
+    challengeState[
+      currentQuestion?.id ?? -1
+    ]?.loading ?? false;
+
   const [testStartTime,
     setTestStartTime] =
     useState(Date.now());
@@ -55,24 +71,30 @@ export default function ExamCenter() {
   const questionEnteredAt =
     useRef(Date.now());
 
-  const currentQuestion =
-    questions[currentQuestionIndex];
+  const pausedDurationRef =
+    useRef(0);
+
+  const challengePauseStartedAt =
+    useRef<number | null>(null);
 
   useEffect(() => {
+    if (challengeLoading) return;
+
     const interval =
-      setInterval(() => {
+      window.setInterval(() => {
         setElapsedTime(
           Math.floor(
             (Date.now() -
-              testStartTime) /
+              testStartTime -
+              pausedDurationRef.current) /
               1000
           )
         );
       }, 1000);
 
     return () =>
-      clearInterval(interval);
-  }, [testStartTime]);
+      window.clearInterval(interval);
+  }, [testStartTime, challengeLoading]);
 
   useEffect(() => {
     if (!testId) return;
@@ -104,6 +126,10 @@ export default function ExamCenter() {
       setExamState({});
 
       setTestStartTime(Date.now());
+
+      pausedDurationRef.current = 0;
+      challengePauseStartedAt.current =
+        null;
 
       questionEnteredAt.current =
         Date.now();
@@ -245,6 +271,22 @@ export default function ExamCenter() {
     }));
   }
 
+  function resumeChallengeTimers() {
+    if (
+      challengePauseStartedAt.current !==
+      null
+    ) {
+      pausedDurationRef.current +=
+        Date.now() -
+        challengePauseStartedAt.current;
+      challengePauseStartedAt.current =
+        null;
+    }
+
+    questionEnteredAt.current =
+      Date.now();
+  }
+
   async function handleSubmit() {
     if (!selectedTest || !currentQuestion)
       return;
@@ -311,8 +353,131 @@ export default function ExamCenter() {
     }
   }
 
+  async function handleChallenge() {
+    if (!currentQuestion)
+      return;
+
+    const current =
+      examState[currentQuestion.id];
+
+    if (!current?.answer || challengeLoading)
+      return;
+
+    finishCurrentQuestionTimer();
+    challengePauseStartedAt.current =
+      Date.now();
+
+    setChallengeState((prev) => ({
+      ...prev,
+
+      [currentQuestion.id]: {
+        loading: true,
+
+        completed: false,
+
+        failed: false,
+      },
+    }));
+
+    try {
+      const result =
+        await challengeQuestion(
+          currentQuestion.id,
+          current.answer
+        );
+
+      resumeChallengeTimers();
+
+      setExamState((prev) => ({
+        ...prev,
+
+        [currentQuestion.id]: {
+          ...(prev[currentQuestion.id] ?? {
+            questionId:
+              currentQuestion.id,
+
+            answer: current.answer,
+
+            visitCount: 1,
+
+            timeTakenSeconds: 0,
+          }),
+
+          updatedScore:
+            result?.updatedScore,
+        },
+      }));
+
+      setChallengeState((prev) => ({
+        ...prev,
+
+        [currentQuestion.id]: {
+          loading: false,
+
+          completed: true,
+
+          failed: false,
+
+          result,
+
+          challenge: {
+            challenged: true,
+
+            status:
+              result?.updatedScore !==
+              undefined
+                ? "accepted"
+                : "rejected",
+
+            derivedAnswer:
+              result?.derivedAnswer ?? "",
+
+            reasoning:
+              result?.reasoning ?? "",
+
+            confidence:
+              result?.confidence ?? 0,
+          },
+        },
+      }));
+    } catch (error) {
+      console.error(error);
+
+      resumeChallengeTimers();
+
+      setChallengeState((prev) => ({
+        ...prev,
+
+        [currentQuestion.id]: {
+          loading: false,
+
+          completed: false,
+
+          failed: true,
+
+          errorMessage:
+            "Challenge failed. Please try again.",
+        },
+      }));
+    }
+  }
+
   return (
     <AppLayout>
+      {challengeLoading && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
+          <div className="rounded-xl bg-white px-8 py-6 text-center shadow-xl">
+            <div className="mx-auto mb-4 h-10 w-10 animate-spin rounded-full border-4 border-gray-300 border-t-black" />
+            <p className="font-semibold text-gray-900">
+              PrepPilot is independently reviewing this question...
+            </p>
+            <p className="mt-2 text-sm text-gray-600">
+              This usually takes a few seconds.
+            </p>
+          </div>
+        </div>
+      )}
+
       <h1 className="text-3xl font-bold mb-6">
         Exam Center
       </h1>
@@ -375,6 +540,7 @@ export default function ExamCenter() {
                           question.id
                         }
                         type="button"
+                        disabled={challengeLoading}
                         onClick={() =>
                           goToQuestion(
                             index
@@ -386,7 +552,7 @@ export default function ExamCenter() {
                             : isAnswered
                             ? "bg-green-100 border-green-300"
                             : "hover:bg-gray-100"
-                        }`}
+                        } ${challengeLoading ? "cursor-not-allowed opacity-50" : ""}`}
                       >
                         {index + 1}
                       </button>
@@ -437,9 +603,7 @@ export default function ExamCenter() {
 
             {currentQuestion && (
               <QuestionCard
-                question={
-                  currentQuestion
-                }
+                question={currentQuestion}
                 answer={
                   examState[
                     currentQuestion.id
@@ -447,6 +611,14 @@ export default function ExamCenter() {
                 }
                 onAnswerChange={
                   recordAnswer
+                }
+                onChallenge={
+                  handleChallenge
+                }
+                challengeState={
+                  challengeState[
+                    currentQuestion.id
+                  ]
                 }
               />
             )}
@@ -464,7 +636,7 @@ export default function ExamCenter() {
                   }
                   disabled={
                     currentQuestionIndex ===
-                    0
+                    0 || challengeLoading
                   }
                   className="rounded border px-4 py-2 disabled:opacity-50"
                 >
@@ -482,7 +654,8 @@ export default function ExamCenter() {
                   disabled={
                     currentQuestionIndex ===
                     questions.length -
-                      1
+                      1 ||
+                    challengeLoading
                   }
                   className="rounded border px-4 py-2 disabled:opacity-50"
                 >
@@ -497,7 +670,7 @@ export default function ExamCenter() {
                 <div className="mt-8 border-t pt-6">
                   <button
                     type="button"
-                    disabled={isSubmitting}
+                    disabled={isSubmitting || challengeLoading}
                     onClick={handleSubmit}
                     className="rounded bg-black px-6 py-2 text-white disabled:opacity-50 disabled:cursor-not-allowed"
                   >

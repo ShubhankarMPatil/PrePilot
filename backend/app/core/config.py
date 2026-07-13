@@ -10,7 +10,10 @@ class Settings(BaseSettings):
     OPENROUTER_MODEL: str
 
     class Config:
-        env_file = ".env"
+        env_file = ".env",
+        extra = "ignore"
+
+    CHALLENGE_MODE: str
 
 
 settings = Settings()

@@ -1,6 +1,10 @@
 from app.ai.client.openrouter import OpenRouterClient
 
+from app.ai.models import GeneratedQuestionSet
+
 from app.ai.prompts.question_generation import build_prompt
+
+from app.ai.prompts.question_generation import SYSTEM_PROMPT
 
 
 class QuestionGenerator:

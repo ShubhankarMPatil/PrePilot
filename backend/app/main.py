@@ -15,7 +15,7 @@ from app.api.submissions import router as submission_router
 from app.api.results import router as results_router
 from app.api.review import router as review_router
 from app.api.coach import router as coach_router
-
+from app.api.challenge import router as challenge_router
 
 app = FastAPI(
     title="PrepPilot API"
@@ -42,6 +42,8 @@ app.include_router(submission_router)
 app.include_router(results_router)
 app.include_router(review_router)
 app.include_router(coach_router)
+app.include_router(challenge_router)
+
 
 @app.on_event("startup")
 def startup_event():

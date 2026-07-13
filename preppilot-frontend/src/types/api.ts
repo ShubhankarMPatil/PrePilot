@@ -77,17 +77,15 @@ export type TestResult = {
 export type ReviewQuestion = {
   questionId: number;
 
-  question: string;
-
+  question: string
   userAnswer: string;
-
   correctAnswer: string;
-
   isCorrect: boolean;
-
   timeTaken: number;
-
   explanation: string;
+  challenge:
+    | ReviewChallenge
+    | null;
 };
 
 export type Document = {
@@ -118,6 +116,7 @@ export type ExamAnswer = {
   answer: string;
   timeTakenSeconds: number;
   visitCount: number;
+  updatedScore?: number;
 };
 
 export type ExamSession = {
@@ -130,4 +129,40 @@ export type CoachInsight = {
   strengths: string[];
   weaknesses: string[];
   recommendations: string[];
+};
+
+export type ChallengeResponse = {
+  questionValid: boolean;
+  generatorAnswerValid: boolean;
+  studentCorrect: boolean;
+  derivedAnswer: string;
+  confidence: number;
+  reasoning: string;
+  updatedScore?: number;
+};
+
+export type ChallengeState = {
+  loading: boolean;
+  completed: boolean;
+  failed?: boolean;
+  errorMessage?: string;
+  result?: ChallengeResponse;
+  challenge?: {
+    challenged: boolean;
+    status: "accepted" | "rejected";
+    derivedAnswer: string;
+    reasoning: string;
+    confidence: number;
+  };
+};
+
+export type ReviewChallenge = {
+  challenged: boolean;
+  status:
+    | "accepted"
+    | "rejected";
+  derivedAnswer: string;
+  reasoning: string;
+  confidence: number;
+  scoreChange: number;
 };

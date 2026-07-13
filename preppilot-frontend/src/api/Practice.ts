@@ -1,5 +1,3 @@
-import { apiFetch } from "./client";
-
 export type GenerateTestRequest = {
   topic: string;
   difficulty: string;

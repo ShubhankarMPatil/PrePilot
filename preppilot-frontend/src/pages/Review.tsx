@@ -92,6 +92,64 @@ export default function Review() {
               <strong>Explanation:</strong>{" "}
               {q.explanation}
             </p>
+            {q.challenge && (
+              <div className="mt-4">
+                <span className="inline-flex items-center rounded-full border px-3 py-1 text-sm font-medium">
+                  ⚖ Challenged
+                </span>
+
+                <span
+                  className={`ml-2 inline-flex items-center rounded-full px-3 py-1 text-sm font-medium ${
+                    q.challenge.status === "accepted"
+                      ? "bg-green-100 text-green-700"
+                      : "bg-red-100 text-red-700"
+                  }`}
+                >
+                  {q.challenge.status === "accepted"
+                    ? "✅ Accepted"
+                    : "❌ Rejected"}
+                </span>
+              </div>
+            )}
+            {q.challenge && (
+              <div className="mt-4 rounded-lg border bg-gray-50 p-4">
+                <h3 className="mb-4 font-semibold">
+                  Challenge Review
+                </h3>
+
+                <div className="space-y-2 text-sm">
+                  <p>
+                    <strong>Status:</strong>{" "}
+                    {q.challenge.status}
+                  </p>
+
+                  <p>
+                    <strong>Independent Answer:</strong>{" "}
+                    {q.challenge.derivedAnswer}
+                  </p>
+
+                  <p>
+                    <strong>Confidence:</strong>{" "}
+                    {(q.challenge.confidence * 100).toFixed(1)}%
+                  </p>
+
+                  <p>
+                    <strong>Score Adjustment:</strong>{" "}
+                    {q.challenge.scoreChange > 0
+                      ? `+${q.challenge.scoreChange}`
+                      : "0"}
+                  </p>
+
+                  <div>
+                    <strong>Reasoning</strong>
+
+                    <p className="mt-1 text-gray-700">
+                      {q.challenge.reasoning}
+                    </p>
+                  </div>
+                </div>
+              </div>
+            )}
           </Card>
         ))}
       </div>

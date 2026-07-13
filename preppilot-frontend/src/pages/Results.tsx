@@ -9,6 +9,9 @@ import { getCoachInsight } from "../api/coach";
 
 import type { TestResult, CoachInsight } from "../types/api";
 
+import { getReview } from "../api/review";
+import type {ReviewQuestion,} from "../types/api";
+
 export default function Results() {
   const { testId } = useParams();
 
@@ -20,6 +23,10 @@ export default function Results() {
 
   const [coach, setCoach] =
     useState<CoachInsight | null>(null);
+
+  const [review,
+  setReview] =
+  useState<ReviewQuestion[]>([]);
 
   const [coachLoading, setCoachLoading] =
     useState(true);
@@ -41,6 +48,19 @@ export default function Results() {
       }
     }
 
+    async function loadReview() {
+      try {
+        const data =
+          await getReview(
+            Number(testId)
+          );
+
+        setReview(data);
+      } catch (error) {
+        console.error(error);
+      }
+    }
+
     async function loadCoach() {
       try {
         const insight =
@@ -58,7 +78,13 @@ export default function Results() {
 
     loadResult();
     loadCoach();
+    loadReview();
   }, [testId]);
+  
+  const challengedQuestions =
+    review.filter(
+      (q) => q.challenge
+    );
 
   if (loading) {
     return (
@@ -82,11 +108,104 @@ export default function Results() {
     );
   }
 
+
   return (
     <AppLayout>
       <h1 className="text-3xl font-bold mb-6">
         Results
       </h1>
+      <Card>
+        <div className="space-y-3">
+          <p>
+            <strong>Score:</strong>{" "}
+            {result.score} /{" "}
+            {result.totalQuestions}
+          </p>
+
+          <p>
+            <strong>Accuracy:</strong>{" "}
+            {result.accuracy}%
+          </p>
+
+          <p>
+            <strong>Average Time:</strong>{" "}
+            {result.averageTime}s
+          </p>
+
+          <Link
+            to={`/review/${testId}`}
+            className="inline-block mt-4 bg-black text-white px-4 py-2 rounded"
+          >
+            Review Test
+          </Link>
+        </div>
+      </Card>
+
+      {challengedQuestions.length > 0 && (
+        <Card>
+          <h2 className="font-semibold mb-4">
+            Challenge Summary
+          </h2>
+
+          <div className="space-y-4">
+            {challengedQuestions.map(
+              (q) => (
+                <div
+                  key={q.questionId}
+                  className="rounded-lg border p-4"
+                >
+                  <div className="flex items-center gap-2 mb-3">
+                    <span className="rounded-full border px-3 py-1 text-sm">
+                      ⚖ Challenged
+                    </span>
+
+                    <span
+                      className={`rounded-full px-3 py-1 text-sm ${
+                        q.challenge!.status ===
+                        "accepted"
+                          ? "bg-green-100 text-green-700"
+                          : "bg-red-100 text-red-700"
+                      }`}
+                    >
+                      {q.challenge!.status ===
+                      "accepted"
+                        ? "✅ Accepted"
+                        : "❌ Rejected"}
+                    </span>
+                  </div>
+
+                  <p>
+                    <strong>
+                      Independent Answer:
+                    </strong>{" "}
+                    {
+                      q.challenge!
+                        .derivedAnswer
+                    }
+                  </p>
+
+                  <p>
+                    <strong>
+                      Score Change:
+                    </strong>{" "}
+                    {q.challenge!
+                      .scoreChange > 0
+                      ? `+${q.challenge!.scoreChange}`
+                      : "0"}
+                  </p>
+
+                  <p className="mt-2 text-gray-700">
+                    {
+                      q.challenge!
+                        .reasoning
+                    }
+                  </p>
+                </div>
+              )
+            )}
+          </div>
+        </Card>
+      )}
 
       {coachLoading && (
         <div className="space-y-4 mt-6">
@@ -159,32 +278,6 @@ export default function Results() {
         </div>
       )}
 
-      <Card>
-        <div className="space-y-3">
-          <p>
-            <strong>Score:</strong>{" "}
-            {result.score} /{" "}
-            {result.totalQuestions}
-          </p>
-
-          <p>
-            <strong>Accuracy:</strong>{" "}
-            {result.accuracy}%
-          </p>
-
-          <p>
-            <strong>Average Time:</strong>{" "}
-            {result.averageTime}s
-          </p>
-
-          <Link
-            to={`/review/${testId}`}
-            className="inline-block mt-4 bg-black text-white px-4 py-2 rounded"
-          >
-            Review Test
-          </Link>
-        </div>
-      </Card>
     </AppLayout>
   );
 }

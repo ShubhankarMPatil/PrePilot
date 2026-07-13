@@ -25,6 +25,7 @@ class OpenRouterClient:
         system_prompt: str,
         user_prompt: str,
         response_model,
+        temperature: float = 0.7,
     ):
 
         return self.client.chat.completions.create(
