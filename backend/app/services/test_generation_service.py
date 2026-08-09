@@ -131,9 +131,9 @@ class TestGenerationService:
 
                 feature="question_generation",
 
-                provider="openrouter",
-
-                model=settings.OPENROUTER_MODEL,
+                provider=settings.LLM_PROVIDER,
+                
+                model=settings.active_llm_model,
 
                 prompt_version=PROMPT_VERSION,
 
@@ -163,9 +163,9 @@ class TestGenerationService:
 
                 feature="question_generation",
 
-                provider="openrouter",
+                provider=settings.LLM_PROVIDER,
 
-                model=settings.OPENROUTER_MODEL,
+                model=settings.active_llm_model,
 
                 prompt_version=PROMPT_VERSION,
 

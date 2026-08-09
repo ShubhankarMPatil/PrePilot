@@ -1,4 +1,4 @@
-from app.ai.client.openrouter import OpenRouterClient
+# from app.ai.client.openrouter import OpenRouterClient
 
 from app.ai.models import GeneratedQuestionSet
 
@@ -6,12 +6,13 @@ from app.ai.prompts.question_generation import build_prompt
 
 from app.ai.prompts.question_generation import SYSTEM_PROMPT
 
+from app.ai.client.factory import get_llm
 
 class QuestionGenerator:
 
     def __init__(self):
 
-        self.client = OpenRouterClient()
+        self.client = get_llm()
 
     def generate(
         self,

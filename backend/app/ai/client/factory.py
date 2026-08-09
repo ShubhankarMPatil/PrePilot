@@ -1,12 +1,15 @@
-from app.ai.client.openrouter import OpenRouterClient
+from app.core.config import settings
 
 
 def get_llm():
+    if settings.LLM_PROVIDER == "gemini":
+        from app.ai.client.gemini import GeminiClient
 
-    return OpenRouterClient()
+        return GeminiClient()
 
-    if provider == "ollama":
-    ...
+    if settings.LLM_PROVIDER == "openrouter":
+        from app.ai.client.openrouter import OpenRouterClient
 
-    if provider == "azure":
-        ...
+        return OpenRouterClient()
+
+    raise ValueError(f"Unknown LLM_PROVIDER: {settings.LLM_PROVIDER}")

@@ -1,4 +1,4 @@
-from app.ai.client.openrouter import OpenRouterClient
+# from app.ai.client.openrouter import OpenRouterClient
 
 from app.ai.coaching.models import (
     CoachingInsight,
@@ -9,12 +9,13 @@ from app.ai.coaching.prompts import (
     build_prompt,
 )
 
+from app.ai.client.factory import get_llm
 
 class Coach:
 
     def __init__(self):
 
-        self.client = OpenRouterClient()
+        self.client = get_llm()
 
     def generate(
         self,

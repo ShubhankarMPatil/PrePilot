@@ -7,9 +7,11 @@ from app.ai.challenge.prompts import (
     build_prompt,
 )
 
-from app.ai.client.openrouter import (
-    OpenRouterClient,
-)
+# from app.ai.client.openrouter import (
+#     OpenRouterClient,
+# )
+
+from app.ai.client.factory import get_llm
 
 from app.core.config import settings
 
@@ -18,7 +20,7 @@ class SingleCallStrategy:
 
     def __init__(self):
 
-        self.client = OpenRouterClient()
+        self.client = get_llm()
 
     def solve(
         self,

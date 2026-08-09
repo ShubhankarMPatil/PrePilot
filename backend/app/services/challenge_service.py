@@ -33,11 +33,49 @@ class ChallengeService:
             .first()
         )
 
+        existing = (
+
+            db.query(
+                QuestionChallenge
+            )
+
+            .filter(
+                QuestionChallenge.question_id == question_id,
+                QuestionChallenge.test_id == question.test_id,
+            )
+
+            .first()
+
+        )
+
         if question is None:
 
             raise ValueError(
                 "Question not found."
             )
+
+        if existing:
+
+            return {
+
+                "questionValid": True,
+
+                "generatorAnswerValid": True,
+
+                "studentCorrect": (
+                    existing.verdict == "accepted"
+                ),
+
+                "derivedAnswer": existing.derived_answer,
+
+                "matchedOption": None,
+
+                "confidence": existing.confidence,
+
+                "reasoning": existing.reasoning,
+
+                "updatedScore": None,
+            }
 
         attempt = (
             db.query(QuestionAttempt)
@@ -48,17 +86,17 @@ class ChallengeService:
             .first()
         )
 
-        if attempt is None:
-            return {
-                "questionValid": True,
-                "generatorAnswerValid": True,
-                "studentCorrect": False,
-                "derivedAnswer": question.correct_answer,
-                "matchedOption": None,
-                "confidence": 0.0,
-                "reasoning": "No prior attempt was found for this question.",
-                "updatedScore": None,
-            }
+        # if attempt is None:
+        #     return {
+        #         "questionValid": True,
+        #         "generatorAnswerValid": True,
+        #         "studentCorrect": False,
+        #         "derivedAnswer": question.correct_answer,
+        #         "matchedOption": None,
+        #         "confidence": 0.0,
+        #         "reasoning": "No prior attempt was found for this question.",
+        #         "updatedScore": None,
+        #     }
 
         context = {
 
@@ -84,6 +122,11 @@ class ChallengeService:
             context
         )
 
+        print("=" * 60)
+        print("Challenge Verdict")
+        print(verdict.model_dump() if hasattr(verdict, "model_dump") else verdict)
+        print("=" * 60)
+
         challenge = QuestionChallenge(
 
             question_id=question.id,
@@ -105,75 +148,25 @@ class ChallengeService:
             confidence=verdict.confidence,
         )
 
-        existing = (
-
-            db.query(
-                QuestionChallenge
-            )
-
-            .filter(
-                QuestionChallenge.question_id
-                == question_id
-            )
-
-            .first()
-
-        )
-
-        db.add(challenge)
-
-        if existing:
-
-            return {
-
-                "questionValid": True,
-
-                "generatorAnswerValid": True,
-
-                "studentCorrect": (
-                    existing.verdict == "accepted"
-                ),
-
-                "derivedAnswer": existing.derived_answer,
-
-                "matchedOption": None,
-
-                "confidence": existing.confidence,
-
-                "reasoning": existing.reasoning,
-
-                "updatedScore": None,
-            }
-
-
         score_updated = False
 
-        #
-        # Fix generator mistakes
-        #
-
         if (
-
-            not verdict.question_valid
-
+            attempt is not None
+            and (
+                not verdict.generator_answer_valid
+                or not verdict.question_valid
+            )
         ):
 
-            attempt.correct_answer = (
-                verdict.derived_answer
-            )
-
-            attempt.is_correct = (
-                verdict.student_correct
-            )
+            attempt.correct_answer = verdict.derived_answer
+            attempt.is_correct = verdict.student_correct
 
             if not verdict.generator_answer_valid:
-
-                question.correct_answer = (
-                    verdict.derived_answer
-                )
+                question.correct_answer = verdict.derived_answer
 
             score_updated = True
 
+        db.add(challenge)
         db.commit()
 
         updated_score = None
